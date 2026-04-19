@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const categoriesPlaceholderDiv = document.getElementById('categories-placeholder');
     const loadMoreButton = document.getElementById('load-more-button');
     const loadMoreContainer = document.getElementById('load-more-container');
+    const hideZeroCheckbox = document.getElementById('hide-zero-checkbox');
 
     const selectedCategoriesListUl = document.getElementById('selected-categories-list');
     const selectedCategoriesPlaceholderDiv = document.getElementById('selected-categories-placeholder');
@@ -26,6 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const noResultsMessageDiv = document.getElementById('no-results-message');
     const resultCountSpan = document.getElementById('result-count');
     const paginationContainer = document.getElementById('pagination-container');
+    const exportExcelBtn = document.getElementById('export-excel-btn');
+    const exportHyperlinksCheckbox = document.getElementById('export-hyperlinks');
+    const exportOnlyHyperlinksCheckbox = document.getElementById('export-only-hyperlinks');
 
     const toggleInstructionsButton = document.getElementById('toggle-instructions-button');
     const instructionsContent = document.getElementById('usage-instructions-content');
@@ -40,10 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedCategories = new Map(); // Using Map to store {name, object} for easy removal and access
     let categoryContinueToken = null;
     let currentCategorySearchTerm = '';
+    let hideZeroCategories = false;
 
     let currentResults = [];
     let currentPage = 1;
     const itemsPerPage = 15;
+    let currentSortField = 'pageid';
+    let currentSortOrder = 'asc';
 
 
     // --- Initialization ---
@@ -60,7 +67,77 @@ document.addEventListener('DOMContentLoaded', () => {
     categorySearchInput.addEventListener('input', Utils.debounce(handleCategorySearch, 300));
     loadMoreButton.addEventListener('click', loadMoreCategories);
 
+    hideZeroCheckbox.addEventListener('change', (e) => {
+        hideZeroCategories = e.target.checked;
+        renderCategories(allFetchedCategories);
+    });
+
     findIntersectionButton.addEventListener('click', handleFindIntersection);
+
+    document.querySelectorAll('.sortable-header').forEach(th => {
+        th.addEventListener('click', () => {
+            const field = th.id.replace('sort-by-', '');
+            if (currentSortField === field) {
+                currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortField = field;
+                currentSortOrder = 'asc';
+            }
+            sortResults();
+            displayResultsPage(1);
+        });
+    });
+
+    exportExcelBtn.addEventListener('click', exportToExcel);
+
+    exportOnlyHyperlinksCheckbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            exportHyperlinksCheckbox.checked = true;
+            exportHyperlinksCheckbox.disabled = true;
+        } else {
+            exportHyperlinksCheckbox.disabled = false;
+        }
+    });
+
+    exportHyperlinksCheckbox.addEventListener('change', (e) => {
+        if (!e.target.checked) {
+            exportOnlyHyperlinksCheckbox.checked = false;
+        }
+    });
+
+    function exportToExcel() {
+        if (currentResults.length === 0) return;
+
+        const withHyperlinks = exportHyperlinksCheckbox.checked;
+        const onlyHyperlinks = exportOnlyHyperlinksCheckbox.checked;
+        const worksheetData = currentResults.map(page => {
+            const row = {
+                '页面标题': onlyHyperlinks ? mediaWikiApi.getPageUrl(page.title) : page.title,
+                '最后修改时间': page.timestamp ? new Date(page.timestamp).toLocaleString() : '-',
+                '页面ID': page.pageid
+            };
+            return row;
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+
+        if (withHyperlinks) {
+            currentResults.forEach((page, index) => {
+                const cellAddress = XLSX.utils.encode_cell({r: index + 1, c: 0});
+                const url = mediaWikiApi.getPageUrl(page.title);
+                worksheet[cellAddress].l = { Target: url, Tooltip: url };
+                worksheet[cellAddress].s = {
+                    font: { color: { rgb: '0000FF' }, underline: true }
+                };
+            });
+        }
+
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, '交集结果');
+
+        const fileName = `mediawiki-category-intersection-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        XLSX.writeFile(workbook, fileName);
+    }
 
     toggleInstructionsButton.addEventListener('click', () => {
         const isHidden = instructionsContent.classList.toggle('hidden');
@@ -153,17 +230,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function renderCategories(categoriesToRender) {
-        // Filter based on search term if needed, though fetch might already do prefix search
         const searchTerm = categorySearchInput.value.toLowerCase();
         displayedCategories = categoriesToRender.filter(cat => cat.name.toLowerCase().includes(searchTerm));
 
-        categoriesListUl.innerHTML = ''; // Clear current list items before re-rendering
+        if (hideZeroCategories) {
+            displayedCategories = displayedCategories.filter(cat => cat.size > 0);
+        }
+
+        categoriesListUl.innerHTML = '';
 
         if (displayedCategories.length === 0 && searchTerm) {
-             categoriesListUl.innerHTML = `<li class="text-gray-500 p-3 text-center">${_('noCategoriesMatchSearch')}</li>`; // Add to locales
+             categoriesListUl.innerHTML = `<li class="text-gray-500 p-3 text-center">${_('noCategoriesMatchSearch')}</li>`;
              return;
         }
-        if (displayedCategories.length === 0 && allFetchedCategories.length > 0) { // No match but others exist
+        if (displayedCategories.length === 0 && allFetchedCategories.length > 0) {
              categoriesListUl.innerHTML = `<li class="text-gray-500 p-3 text-center">${_('noCategoriesMatchSearch')}</li>`;
              return;
         }
@@ -173,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.textContent = `${cat.name} (${cat.size})`;
             li.dataset.categoryName = cat.name;
+            li.title = cat.name;
             li.classList.add('category-item', 'p-2', 'hover:bg-blue-100', 'cursor-pointer', 'rounded');
             if (selectedCategories.has(cat.name)) {
                 li.classList.add('selected', 'bg-blue-100', 'font-semibold');
@@ -281,7 +362,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             );
-            displayResultsPage(1); // Display first page of results
+            sortResults();
+            displayResultsPage(1);
             resultsSection.classList.remove('hidden');
 
         } catch (error) {
@@ -290,6 +372,38 @@ document.addEventListener('DOMContentLoaded', () => {
             progressSection.classList.add('hidden'); // Hide progress on error
         }
     }
+
+function sortResults() {
+    document.querySelectorAll('.sortable-header').forEach(th => {
+        th.classList.remove('asc', 'desc');
+    });
+    const activeHeader = document.getElementById(`sort-by-${currentSortField}`);
+    if (activeHeader) {
+        activeHeader.classList.add(currentSortOrder);
+    }
+
+    currentResults.sort((a, b) => {
+        let valA, valB;
+        switch (currentSortField) {
+            case 'title':
+                valA = a.title.toLowerCase();
+                valB = b.title.toLowerCase();
+                break;
+            case 'timestamp':
+                valA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+                valB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+                break;
+            case 'pageid':
+            default:
+                valA = a.pageid;
+                valB = b.pageid;
+                break;
+        }
+        if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
 
 function displayResultsPage(pageNumber) {
     currentPage = pageNumber;

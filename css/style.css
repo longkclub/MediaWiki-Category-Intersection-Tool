@@ -159,3 +159,34 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Sortable table header styles */
+.sortable-header {
+    user-select: none;
+}
+
+.sortable-header:hover {
+    background-color: #e5e7eb;
+}
+
+.sort-indicator {
+    display: inline-block;
+    margin-left: 0.25rem;
+    opacity: 0.3;
+}
+
+.sortable-header.asc .sort-indicator::after {
+    content: "▲";
+    opacity: 1;
+}
+
+.sortable-header.desc .sort-indicator::after {
+    content: "▼";
+    opacity: 1;
+}
+
+.sortable-header.asc .sort-indicator,
+.sortable-header.desc .sort-indicator {
+    opacity: 1;
+    color: #2563eb;
+}

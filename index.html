@@ -6,6 +6,7 @@
     <title data-lang-key="title">MediaWiki 分类交集工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="/images/favicon.ico">
 <style>
     /* 新增表格行交互样式 */
     #results-table-body tr {
@@ -61,21 +62,22 @@
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen font-sans">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Language Switcher -->
-        <div class="lang-switcher flex justify-end mb-4 space-x-2">
-            <button id="lang-en" data-lang="en">English</button>
-            <button id="lang-zh" data-lang="zh" class="active">中文</button>
+    <div class="container mx-auto px-2 py-6">
+        <!-- Header with Language Switcher -->
+        <div class="flex justify-between items-center mb-4">
+            <header class="text-center">
+                <h1 class="text-3xl font-bold text-gray-800" data-lang-key="headerTitle">MediaWiki 分类交集工具</h1>
+                <p class="text-base text-gray-600 mt-1" data-lang-key="headerSubtitle">查找同时属于多个分类的页面</p>
+            </header>
+            <!-- Language Switcher -->
+            <div class="lang-switcher flex space-x-2">
+                <button id="lang-en" data-lang="en">English</button>
+                <button id="lang-zh" data-lang="zh" class="active">中文</button>
+            </div>
         </div>
 
-        <!-- Header Section -->
-        <header class="mb-8 text-center">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2" data-lang-key="headerTitle">MediaWiki 分类交集工具</h1>
-            <p class="text-lg text-gray-600" data-lang-key="headerSubtitle">查找同时属于多个分类的页面</p>
-        </header>
-
         <!-- Usage Instructions Section -->
-        <section id="usage-instructions-section" class="mb-6">
+        <section id="usage-instructions-section" class="mb-4">
             <button id="toggle-instructions-button" class="w-full text-left text-blue-600 hover:text-blue-800 focus:outline-none p-3 bg-blue-50 rounded-lg shadow hover:shadow-md transition-all flex justify-between items-center">
                 <span id="toggle-instructions-text" data-lang-key="showUsageInstructions">显示使用说明</span>
                 <svg id="instructions-arrow" class="w-5 h-5 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -86,13 +88,29 @@
                     <li data-lang-key="usageInstructionsStep1"><strong>连接站点：</strong> 在 “MediaWiki 站点连接” 部分输入目标 MediaWiki 站点的 <code>api.php</code> 文件的完整 URL (例如：<code>https://en.wikipedia.org/w/api.php</code>)，然后点击 “连接并加载分类” 按钮。</li>
                     <li data-lang-key="usageInstructionsStep2"><strong>选择分类：</strong> 连接成功后，可在 “分类选择” 部分浏览或搜索分类。点击分类名称将其添加到 “已选分类” 列表。您可以选择多个分类。</li>
                     <li data-lang-key="usageInstructionsStep3"><strong>查找交集：</strong> 选择完所有目标分类后，点击 “查找所有已选分类中的页面” 按钮。工具将开始获取并计算这些分类下的页面交集。</li>
-                    <li data-lang-key="usageInstructionsStep4"><strong>查看结果：</strong> 处理完成后，“交集结果” 部分将显示同时属于所有已选分类的页面列表。如果结果过多，将提供分页导航。</li>
+                    <li data-lang-key="usageInstructionsStep4"><strong>查看结果：</strong> 处理完成后，“交集结果” 部分将显示同时属于所有已选分类的页面列表。点击表头（页面标题、最后修改时间、页面ID）可对结果进行排序。如果结果过多，将提供分页导航。</li>
                 </ol>
             </div>
         </section>
 
+        <!-- CORS Warning -->
+        <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700" data-lang-key="corsWarning">
+                        <strong>CORS限制：</strong>本工具未解决跨域资源共享(CORS)问题。如果MediaWiki站点的API没有启用CORS，可能无法正常访问。对于MediaWiki站长，推荐安装扩展：<strong>DynamicPageList4</strong>或<strong>DPL系列</strong>以实现类似功能。
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <!-- Site Input Section -->
-        <section id="site-input-section" class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <section id="site-input-section" class="bg-white rounded-lg shadow-lg p-6 mb-4">
             <h2 class="text-2xl font-semibold text-gray-800 mb-6" data-lang-key="siteInputTitle">MediaWiki 站点连接</h2>
             <div class="flex flex-col md:flex-row gap-4 items-end">
                 <div class="flex-grow">
@@ -103,7 +121,7 @@
                         class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
                         placeholder="例如：https://en.wikipedia.org/w/api.php"
                         data-lang-key-placeholder="apiUrlPlaceholder"
-                        value="在这里修改默认的api url">
+                        value="">
                     <p class="mt-1 text-xs text-gray-500" data-lang-key="apiUrlHelp">请输入 MediaWiki 站点的 api.php 完整 URL</p>
                 </div>
                 <div class="flex-shrink-0">
@@ -121,20 +139,27 @@
         </section>
 
         <!-- Category Selection Section -->
-        <section id="category-selection-section" class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-6" data-lang-key="categorySelectionTitle">分类选择</h2>
+        <section id="category-selection-section" class="bg-white rounded-lg shadow-lg p-6 mb-4">
             <div class="flex flex-col lg:flex-row gap-6">
                 <!-- Category Browser -->
                 <div class="w-full lg:w-2/3">
-                    <div class="mb-4">
-                        <label for="category-search" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="searchCategoriesLabel">搜索分类</label>
-                        <input
-                            type="text"
-                            id="category-search"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
-                            data-lang-key-placeholder="searchCategoriesPlaceholder"
-                            placeholder="输入以搜索分类..."
-                            disabled>
+                    <div class="mb-4 flex items-center gap-4">
+                        <div class="flex-grow">
+                            <label for="category-search" class="block text-sm font-medium text-gray-700 mb-1" data-lang-key="searchCategoriesLabel">搜索分类</label>
+                            <input
+                                type="text"
+                                id="category-search"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+                                data-lang-key-placeholder="searchCategoriesPlaceholder"
+                                placeholder="输入以搜索分类..."
+                                disabled>
+                        </div>
+                        <div class="flex-shrink-0 self-end">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="hide-zero-checkbox" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="ml-2 text-sm text-gray-700" data-lang-key="hideZeroCategories">隐藏空分类</span>
+                            </label>
+                        </div>
                     </div>
                     <div id="categories-container" class="border border-gray-300 rounded-md h-96 overflow-auto p-3 bg-gray-50">
                         <div id="categories-loading" class="flex justify-center items-center h-full hidden">
@@ -198,7 +223,27 @@
         <section id="results-section" class="bg-white rounded-lg shadow-lg p-6 hidden">
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
                 <h2 class="text-2xl font-semibold text-gray-800" data-lang-key="resultsTitle">交集结果</h2>
-                <span id="result-count" class="mt-2 sm:mt-0 px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full"></span>
+                <div class="flex items-center space-x-3 mt-2 sm:mt-0">
+                    <span id="result-count" class="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full"></span>
+                    <div class="flex space-x-2">
+                        <button
+                            id="export-excel-btn"
+                            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            data-lang-key="exportExcelButton">
+                            导出 Excel
+                        </button>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="export-hyperlinks" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <label for="export-hyperlinks" class="ml-2 text-sm text-gray-700" data-lang-key="exportWithHyperlinks">包含超链接</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="export-only-hyperlinks" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <label for="export-only-hyperlinks" class="ml-2 text-sm text-gray-700" data-lang-key="exportOnlyHyperlinks">只显示超链接</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div id="no-results-message" class="py-10 text-center text-gray-600 hidden text-lg" data-lang-key="noResultsMessage">
                 未找到属于所有已选分类的页面。
@@ -208,24 +253,20 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-100">
     <tr>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-lang-key="pageTitleHeader">
-            页面标题
+        <th id="sort-by-title" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 sortable-header" data-lang-key="pageTitleHeader">
+            页面标题 <span class="sort-indicator"></span>
         </th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-lang-key="lastModifiedHeader">
-            最后修改时间
+        <th id="sort-by-timestamp" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 sortable-header" data-lang-key="lastModifiedHeader">
+            最后修改时间 <span class="sort-indicator"></span>
         </th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" data-lang-key="pageIdHeader">
-            页面ID
+        <th id="sort-by-pageid" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-200 sortable-header" data-lang-key="pageIdHeader">
+            页面ID <span class="sort-indicator"></span>
         </th>
     </tr>
 </thead>
 <tbody id="results-table-body" 
        class="bg-white divide-y divide-gray-200 [&>tr:nth-child(even)]:bg-gray-50">
 </tbody>
-                        <tbody id="results-table-body" 
-       class="bg-white divide-y divide-gray-200 [&>tr:nth-child(even)]:bg-gray-50">
-                            <!-- Results will be added here dynamically -->
-                        </tbody>
                     </table>
                 </div>
                 <div id="pagination-container" class="mt-6 flex justify-center items-center space-x-1">
@@ -243,8 +284,7 @@
     <script src="js/utils.js"></script>
     <script src="js/api.js"></script>
     <script src="js/intersection.js"></script>
+    <script src="js/xlsx.full.min.js"></script>
     <script src="js/app.js"></script>
-    <script charset="UTF-8" id="LA_COLLECT" src="//sdk.51.la/js-sdk-pro.min.js"></script>
-<script>LA.init({id:"3LXNtP4gx5ialLZA",ck:"3LXNtP4gx5ialLZA"})</script>
 </body>
 </html>
