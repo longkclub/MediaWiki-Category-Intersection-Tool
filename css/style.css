@@ -12,12 +12,14 @@
     transition: background-color 0.2s, border-color 0.2s, color 0.2s;
     cursor: pointer;
     padding: 0.5rem 0.75rem;
-    border-radius: 0.375rem; /* rounded-md */
+    border-radius: 0.375rem;
     border: 1px solid transparent;
-    min-width: 0; /* 解决文本溢出问题 */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    word-break: break-word;
+    white-space: normal;
+    box-sizing: border-box;
 }
 
 .category-item:hover {
